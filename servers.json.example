@@ -1,0 +1,21 @@
+[
+  {
+    "id": "sequential-thinking",
+    "transport": "stdio",
+    "command": "docker",
+    "args": [
+      "run",
+      "--rm",
+      "-i",
+      "mcp/sequentialthinking"
+    ]
+  },
+  {
+    "id": "markitdown",
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "markitdown-mcp"
+    ]
+  }
+]

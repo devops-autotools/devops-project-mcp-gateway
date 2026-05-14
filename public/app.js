@@ -305,24 +305,92 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { addLog(`Error: ${error.message}`, 'warn'); }
     }
 
+    // ── Stat card helpers ──────────────────────────────────────
+    function setStatValue(id, value) {
+        const el = document.getElementById(id);
+        if (!el || el.textContent === String(value)) return;
+        el.textContent = value;
+        el.classList.remove('stat-pop');
+        void el.offsetWidth;
+        el.classList.add('stat-pop');
+    }
+
+    const TRANSPORT_COLORS = {
+        'fastmcp':         '#00f2ff',
+        'stdio':           '#a78bfa',
+        'streamable-http': '#00ff88',
+        'sse':             '#ffd700',
+    };
+
+    function updateTransportBreakdown(configured) {
+        const breakdown = document.getElementById('transport-breakdown');
+        if (!breakdown) return;
+        const counts = {};
+        configured.forEach(s => { counts[s.transport] = (counts[s.transport] || 0) + 1; });
+        breakdown.innerHTML = '';
+        Object.entries(counts).forEach(([transport, count]) => {
+            const color = TRANSPORT_COLORS[transport] || '#808080';
+            const safeClass = 'chip-' + transport.replace(/[^a-z0-9]/g, '-');
+            const chip = document.createElement('span');
+            chip.className = `transport-chip ${safeClass}`;
+            chip.innerHTML = `
+                <span class="chip-dot" style="background:${color}"></span>
+                ${transport}
+                <span class="chip-count">×${count}</span>
+            `;
+            breakdown.appendChild(chip);
+        });
+    }
+
+    // ── Fetch status + update stats & breakdown ────────────────
     async function fetchStatus() {
         try {
-            const response = await fetch('/api/status');
-            const data = await response.json();
-            universe.updateNodes(data.upstream);
+            const [statusRes, configRes] = await Promise.all([
+                fetch('/api/status'),
+                fetch('/api/config'),
+            ]);
+            const data       = await statusRes.json();
+            const configured = await configRes.json();
+
+            const connectedMap = new Map(data.upstream.map(s => [s.id, s]));
+            const merged = configured.map(cfg => ({
+                id: cfg.id,
+                transport: cfg.transport,
+                online: connectedMap.has(cfg.id),
+            }));
+
+            // Stat cards
+            const onlineCount = merged.filter(s => s.online).length;
+            setStatValue('stat-configured', configured.length);
+            setStatValue('stat-online',     onlineCount);
+            setStatValue('stat-offline',    configured.length - onlineCount);
+
+            // Transport breakdown chips
+            updateTransportBreakdown(configured);
+
+            // Universe viz
+            universe.updateNodes(merged.filter(s => s.online));
+
+            // MCP-Clients list
             upstreamList.innerHTML = '';
-            if (data.upstream.length === 0) upstreamList.innerHTML = '<p class="empty-state">No MCP-Clients connected.</p>';
-            data.upstream.forEach(server => {
-                const colors = stringToColor(server.id);
+            if (merged.length === 0) {
+                upstreamList.innerHTML = '<p class="empty-state">No MCP-Clients configured.</p>';
+                return;
+            }
+            merged.forEach(server => {
+                const colors     = stringToColor(server.id);
+                const statusDot  = server.online ? '●' : '○';
+                const statusText = server.online ? 'Online' : 'Offline';
+                const dotColor   = server.online ? colors.css : '#555';
                 const div = document.createElement('div');
                 div.className = 'list-item';
                 div.innerHTML = `
-                    <div class="server-icon" style="background: ${colors.cssMuted}; color: ${colors.css}">●</div>
+                    <div class="server-icon" style="background:${colors.cssMuted};color:${dotColor}">${statusDot}</div>
                     <div class="server-info">
                         <h4>${server.id}</h4>
-                        <p>${server.transport} • Online</p>
+                        <p>${server.transport} • ${statusText}</p>
                     </div>
-                    <button class="btn-icon delete-btn" title="Disconnect">×</button>
+                    <button class="btn-icon delete-btn" title="Remove">×</button>
                 `;
                 div.querySelector('.delete-btn').onclick = () => deleteServer(server.id);
                 upstreamList.appendChild(div);
@@ -330,12 +398,19 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error(error); }
     }
 
+    // ── Fetch tools + update tools stat ───────────────────────
     async function fetchTools() {
         try {
             const response = await fetch('/api/tools');
             const tools = await response.json();
+
+            setStatValue('stat-tools', tools.length);
+
             toolsContainer.innerHTML = '';
-            if (tools.length === 0) toolsContainer.innerHTML = '<p class="empty-state">No tools aggregated.</p>';
+            if (tools.length === 0) {
+                toolsContainer.innerHTML = '<p class="empty-state">No tools aggregated.</p>';
+                return;
+            }
             tools.forEach(tool => {
                 const colors = stringToColor(tool.serverId);
                 const card = document.createElement('div');
@@ -344,19 +419,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.innerHTML = `
                     <h4>${tool.name}</h4>
                     <p>${tool.description || 'No description.'}</p>
-                    <div class="tool-meta"><span style="color: ${colors.css}">Client: ${tool.serverId}</span></div>
+                    <div class="tool-meta"><span style="color:${colors.css}">Client: ${tool.serverId}</span></div>
                 `;
                 toolsContainer.appendChild(card);
             });
         } catch (error) { console.error(error); }
     }
 
+    // ── Log helper — feeds both Activity tab and Mini feed ────
     function addLog(message, type = 'system') {
+        const timestamp = new Date().toLocaleTimeString();
+
+        // Main Activity tab
         const entry = document.createElement('div');
         entry.className = `log-entry ${type}`;
-        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        entry.textContent = `[${timestamp}] ${message}`;
         logContent.appendChild(entry);
         logContent.scrollTop = logContent.scrollHeight;
+
+        // Mini feed on Overview (newest first, max 5)
+        const miniLog = document.getElementById('mini-log-content');
+        if (!miniLog) return;
+        // Remove placeholder on first real entry
+        const placeholder = miniLog.querySelector('.mini-log-entry .mini-log-time');
+        if (placeholder && placeholder.textContent === '—') miniLog.innerHTML = '';
+        const mini = document.createElement('div');
+        mini.className = `mini-log-entry ${type}`;
+        mini.innerHTML = `<span class="mini-log-time">${timestamp}</span><span>${message}</span>`;
+        miniLog.prepend(mini);
+        while (miniLog.children.length > 5) miniLog.removeChild(miniLog.lastChild);
     }
 
     fetchStatus();

@@ -193,6 +193,11 @@ async function saveServersFile(configPath: string, servers: UpstreamServerConfig
   await writeFile(configPath, JSON.stringify(servers, null, 2), "utf-8");
 }
 
+app.get("/api/config", async (req, res) => {
+  const configPath = process.env.SERVERS_CONFIG || "/app/servers.json";
+  res.json(await loadServersFile(configPath));
+});
+
 app.post("/api/servers", async (req, res) => {
   const { id, transport, url, command, args } = req.body;
   const configPath = process.env.SERVERS_CONFIG || "/app/servers.json";
@@ -247,15 +252,14 @@ app.listen(port, "0.0.0.0", async () => {
     const { readFile } = await import("fs/promises");
     const raw = await readFile(configPath, "utf-8");
     const servers: UpstreamServerConfig[] = JSON.parse(raw);
-    console.log(`[Startup] Loading ${servers.length} server(s) from ${configPath}`);
-    for (const server of servers) {
-      try {
-        await upstreamManager.connect(server);
-        console.log(`[Startup] Connected: ${server.id}`);
-      } catch (err: any) {
-        console.error(`[Startup] Failed to connect ${server.id}:`, err.message);
-      }
-    }
+    console.log(`[Startup] Loading ${servers.length} server(s) from ${configPath} (parallel)`);
+    const results = await Promise.allSettled(
+      servers.map(server => upstreamManager.connect(server))
+    );
+    results.forEach((result, i) => {
+      if (result.status === "fulfilled") console.log(`[Startup] Connected: ${servers[i].id}`);
+      else console.error(`[Startup] Failed to connect ${servers[i].id}:`, result.reason?.message);
+    });
   } catch (err: any) {
     if (err.code !== "ENOENT") console.error(`[Startup] Could not load ${configPath}:`, err.message);
   }

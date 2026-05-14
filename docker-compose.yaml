@@ -2,6 +2,10 @@ services:
   mcp-gateway:
     build: .
     network_mode: host
+    user: mcpuser
+    group_add:
+      - "984"   # host docker GID — allows mcpuser to use /var/run/docker.sock
+      - "1000"  # host thalt GID — allows mcpuser to write servers.json bind mount
     environment:
       - PORT=3010
       - HOST=0.0.0.0
@@ -9,4 +13,5 @@ services:
       - API_KEY=mcp_gateway_secret_123
     volumes:
       - ./servers.json:/app/servers.json
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped

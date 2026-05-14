@@ -84,6 +84,32 @@
             </div>
 
             <section id="overview" class="tab-content active">
+
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-mini-card">
+                        <div class="stat-mini-accent" style="background:var(--secondary-color)"></div>
+                        <div class="stat-mini-value" id="stat-configured">—</div>
+                        <div class="stat-mini-label">Servers Configured</div>
+                    </div>
+                    <div class="stat-mini-card">
+                        <div class="stat-mini-accent" style="background:#00ff88"></div>
+                        <div class="stat-mini-value" id="stat-online" style="color:#00ff88">—</div>
+                        <div class="stat-mini-label">Online</div>
+                    </div>
+                    <div class="stat-mini-card">
+                        <div class="stat-mini-accent" style="background:#ff4444"></div>
+                        <div class="stat-mini-value" id="stat-offline" style="color:#ff6666">—</div>
+                        <div class="stat-mini-label">Offline</div>
+                    </div>
+                    <div class="stat-mini-card">
+                        <div class="stat-mini-accent" style="background:var(--primary-color)"></div>
+                        <div class="stat-mini-value" id="stat-tools" style="color:var(--primary-color)">—</div>
+                        <div class="stat-mini-label">Tools Available</div>
+                    </div>
+                </div>
+
+                <!-- Universe + Clients -->
                 <div class="dashboard-grid">
                     <div class="card stat-card universe-card">
                         <h3>Universe Connectivity</h3>
@@ -94,8 +120,21 @@
                         <div id="upstream-list" class="item-list">
                             <div class="loading-spinner"></div>
                         </div>
+                        <div class="transport-breakdown" id="transport-breakdown"></div>
                     </div>
                 </div>
+
+                <!-- Mini Activity Feed -->
+                <div class="card mini-activity-card">
+                    <h3>Recent Activity</h3>
+                    <div id="mini-log-content" class="mini-log">
+                        <div class="mini-log-entry system">
+                            <span class="mini-log-time">—</span>
+                            <span>Waiting for activity...</span>
+                        </div>
+                    </div>
+                </div>
+
             </section>
 
             <section id="tools" class="tab-content">

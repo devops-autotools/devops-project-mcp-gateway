@@ -178,6 +178,7 @@ class FastMCPPOSTTransport implements Transport {
 
 export class UpstreamManager {
   private clients = new Map<string, Client>();
+  private configs = new Map<string, UpstreamServerConfig>();
 
   async connect(config: UpstreamServerConfig) {
     console.log(`[Upstream] Connecting to ${config.id}...`);
@@ -187,6 +188,7 @@ export class UpstreamManager {
       transport = new StdioClientTransport({
         command: config.command!,
         args: config.args || [],
+        env: config.env ? { ...process.env, ...config.env } as Record<string, string> : undefined,
       });
     } else if (config.transport === "sse") {
       transport = new SSEClientTransport(new URL(config.url!));
@@ -204,6 +206,7 @@ export class UpstreamManager {
 
     await client.connect(transport);
     this.clients.set(config.id, client);
+    this.configs.set(config.id, config);
     console.log(`[Upstream] Successfully connected to ${config.id}`);
   }
 
@@ -212,6 +215,7 @@ export class UpstreamManager {
     if (client) {
       await client.close();
       this.clients.delete(id);
+      this.configs.delete(id);
     }
   }
 
@@ -220,7 +224,11 @@ export class UpstreamManager {
   }
 
   getStatus() {
-    return Array.from(this.clients.keys()).map(id => ({ id, status: "connected" }));
+    return Array.from(this.clients.keys()).map(id => ({
+      id,
+      status: "connected",
+      transport: this.configs.get(id)?.transport ?? "unknown",
+    }));
   }
 }
 
