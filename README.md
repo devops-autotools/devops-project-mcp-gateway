@@ -48,32 +48,21 @@ MCP Gateway  ←─── servers.json (config)
 
 ## Quick Start
 
-### 1. Configure upstream servers
-
-Edit `servers.json` in the project root:
-
-```json
-[
-  {
-    "id": "ceph-alpha",
-    "transport": "fastmcp",
-    "url": "http://192.168.1.10:8000/mcp"
-  },
-  {
-    "id": "my-other-mcp",
-    "transport": "streamable-http",
-    "url": "http://192.168.1.20:8000/mcp"
-  }
-]
-```
-
-### 2. Start the gateway
+### 1. Start the gateway
 
 ```bash
 docker compose up -d --build
 ```
 
 Dashboard: `http://localhost:3010`
+
+### 2. Add MCP servers
+
+Open the dashboard and click **"Add New MCP-Client"**. Select the transport type, enter the URL and an ID — the server connects immediately and is saved automatically.
+
+> `servers.json` is automatically updated by the gateway whenever you add or remove a server via the dashboard or API. **There is no need to edit this file manually.**
+>
+> Only edit it directly if you want to pre-configure servers before the very first `docker compose up`.
 
 ### 3. Connect Hermes
 
@@ -113,7 +102,7 @@ Hermes will discover all aggregated tools automatically. Tools are namespaced by
 ]
 ```
 
-Changes to `servers.json` take effect on the next `docker compose restart`. To add/remove servers without restarting, use the dashboard or API.
+`servers.json` is automatically updated whenever you add or remove a server via the dashboard or API. Only edit it manually to pre-configure servers before the first `docker compose up` — after that, use the dashboard.
 
 ---
 
