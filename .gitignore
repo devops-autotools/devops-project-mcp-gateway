@@ -5,3 +5,4 @@ npm-debug.log
 *.log
 scratch/
 servers.json
+.playwright-mcp
