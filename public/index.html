@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Gateway Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js for 3D Visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo-icon">M</div>
+                <h1>MCP Gateway</h1>
+            </div>
+            <nav class="main-nav">
+                <a href="#" class="nav-item active" data-tab="overview">Overview</a>
+                <a href="#" class="nav-item" data-tab="tools">Tools</a>
+                <a href="#" class="nav-item" data-tab="resources">Resources</a>
+                <a href="#" class="nav-item" data-tab="logs">Activity</a>
+            </nav>
+            <div class="status-badge-container">
+                <div class="status-dot online"></div>
+                <span>Gateway: Online</span>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <header class="top-header">
+                <div class="search-container">
+                    <input type="text" placeholder="Search tools or resources...">
+                </div>
+                <div class="header-actions">
+                    <button id="add-server-btn" class="btn btn-secondary">Add New MCP-Client</button>
+                    <button class="btn btn-primary" onclick="window.location.reload()">Refresh Data</button>
+                </div>
+            </header>
+
+            <!-- Modal for Adding Client -->
+            <div id="add-server-modal" class="modal">
+                <div class="modal-content card">
+                    <h2>Add New MCP-Client</h2>
+                    <p>Enter the connection details for the remote or local MCP source.</p>
+                    <form id="add-server-form">
+                        <div class="form-group">
+                            <label>Client ID</label>
+                            <input type="text" id="server-id" placeholder="e.g. ceph-beta" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Transport</label>
+                            <select id="server-transport">
+                                <option value="streamable-http">Streamable HTTP (MCP 2025-11-25, chuẩn mới)</option>
+                                <option value="sse">SSE (MCP 2024-11-05, chuẩn cũ)</option>
+                                <option value="fastmcp">FastMCP (Ceph / persistent POST)</option>
+                                <option value="stdio">Stdio (local process)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="url-group">
+                            <label>Endpoint URL</label>
+                            <input type="url" id="server-url" placeholder="e.g. http://192.168.1.10:8000/mcp">
+                            <small style="color: #888; display: block; margin-top: 5px;">Must include path (e.g. /sse or /mcp)</small>
+                        </div>
+
+                        <div class="form-group" id="stdio-group" style="display:none">
+                            <label>Command</label>
+                            <input type="text" id="server-command" placeholder="e.g. npx">
+                            <label style="margin-top:8px">Args (space-separated)</label>
+                            <input type="text" id="server-args" placeholder="e.g. -y @some/mcp-server">
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" class="btn" id="close-modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Connect Client</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <section id="overview" class="tab-content active">
+                <div class="dashboard-grid">
+                    <div class="card stat-card universe-card">
+                        <h3>Universe Connectivity</h3>
+                        <div id="universe-container" class="visual-placeholder universe-box"></div>
+                    </div>
+                    <div class="card list-card">
+                        <h3>Connected MCP-Clients</h3>
+                        <div id="upstream-list" class="item-list">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tools" class="tab-content">
+                <div class="tools-grid" id="tools-container">
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+
+            <section id="resources" class="tab-content">
+                <div class="resources-list" id="resources-container">
+                    <p class="empty-state">No resources detected yet.</p>
+                </div>
+            </section>
+
+            <section id="logs" class="tab-content">
+                <div class="log-viewer">
+                    <div class="log-header">Live Gateway Activity</div>
+                    <div id="log-content" class="log-content">
+                        <div class="log-entry system">[SYSTEM] Dashboard connected. Waiting for logs...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

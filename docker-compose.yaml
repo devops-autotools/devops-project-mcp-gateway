@@ -1,0 +1,12 @@
+services:
+  mcp-gateway:
+    build: .
+    network_mode: host
+    environment:
+      - PORT=3010
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+      - API_KEY=mcp_gateway_secret_123
+    volumes:
+      - ./servers.json:/app/servers.json
+    restart: unless-stopped

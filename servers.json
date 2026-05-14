@@ -1,0 +1,12 @@
+[
+  {
+    "id": "ceph-alpha",
+    "transport": "fastmcp",
+    "url": "http://172.25.155.214:8000/mcp"
+  },
+  {
+    "id": "ceph-thalt",
+    "transport": "fastmcp",
+    "url": "http://172.25.155.214:8000/mcp"
+  }
+]
